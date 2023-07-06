@@ -4,5 +4,6 @@ urlpatterns = [
     
 
 path('', views.index, name="index"),
+# path('display_image', views.display_image, name="display_image"),
 
 ]

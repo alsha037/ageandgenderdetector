@@ -2,7 +2,11 @@ from django.shortcuts import render
 
 from django import forms
 import os
-
+import io
+import base64
+import numpy as np
+import cv2
+ 
 
 class ImageUploadForm(forms.Form):
     image = forms.ImageField()
@@ -23,15 +27,26 @@ def index(request):
                 f.write(image.read())
             # Open the image using Pillow
             pil_image = Image.open(image_path)
+            output_image = detect_face(pil_image)
+
+            img_bytes = io.BytesIO()
+            pil_image.save(img_bytes, format='JPEG')
+            output_image.save(img_bytes, format='JPEG')
+
+            img_data = img_bytes.getvalue()
             # Delete the temporary image file
-            os.remove(image_path)
+            # os.remove(image_path)
             # Pass the image to the template for display
-            return render(request, './agedetection/display_image.html', {'image': pil_image})
+            return render(request, './agedetection/display_image.html', {'image': base64.b64encode(img_data).decode('utf-8')})
    else:
             form = ImageUploadForm()
 
    return render(request, './agedetection/index.html',{'form':form})
- 
+
+
+faceProto="agedetection/opencv_face_detector.pbtxt"
+faceModel="agedetection/opencv_face_detector_uint8.pb"
+faceNet=cv2.dnn.readNetFromTensorflow(faceModel,faceProto)
 def detect_face(image):
     opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     blob=cv2.dnn.blobFromImage(opencv_image, 1.0, (300, 300), [104, 117, 123], True, False)
